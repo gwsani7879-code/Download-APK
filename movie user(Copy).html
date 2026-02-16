@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Store</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#000;
+  color:#fff;
+}
+.page{display:none;padding:16px;}
+#page1{display:block}
+
+/* ===== AUTO SLIDER ===== */
+#autoSlider{
+  position:relative;
+  overflow:hidden;
+  width:100%;
+  margin-bottom:10px;
+}
+#autoTrack{
+  display:flex;
+  transition:transform .6s ease;
+}
+.autoThumb{
+  min-width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  cursor:pointer;
+}
+
+/* ===== DOTS ===== */
+#dots{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:6px;
+}
+.dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#777;
+}
+.dot.active{background:#fff}
+
+/* ===== SEARCH BOX ===== */
+.searchWrapper{
+  position:relative;
+  margin-bottom:10px;
+}
+#searchBox{
+  width:85%;
+  padding:8px 36px 8px 12px;
+  border-radius:8px;
+  border:none;
+  font-size:16px;
+  background:#111 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>') no-repeat right 10px center/20px 20px;
+  color:#fff;
+}
+
+/* ===== PAGE 1 GRID ===== */
+#gallery{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:30px;
+  max-height:calc(100vh - 300px);
+  overflow-y:auto;
+  padding-bottom:100px;
+}
+
+/* ===== THUMB BOX ===== */
+.thumbBox{
+  position:relative;
+  cursor:pointer;
+  border-radius:12px;
+  overflow:hidden;
+  transition:transform .3s ease;
+}
+.thumbBox.large{
+  transform:scale(1.1);
+}
+
+/* ===== THUMB IMAGE ===== */
+.thumbBox img{
+  width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  display:block;
+  border-radius:12px;
+}
+
+/* ===== BADGE ===== */
+.badge{
+  position:absolute;
+  top:0px;
+  left:0px;
+  background:#00ff00;
+  padding:1px 5px;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:bold;
+}
+
+/* ===== CAPTION ===== */
+.caption{
+  background:rgba(0,0,0,0.6);
+  padding:6px 8px;
+  font-size:14px;
+  text-align:left;
+  border-radius:0 0 12px 12px;
+  margin-top:-4px;
+  color:#fff;
+}
+
+/* ===== PAGE 2 ===== */
+#videoContainer{
+  max-width:720px;
+  margin:20px auto 0;
+  text-align:center;
+}
+#videoFrame{
+  width:100%;
+  aspect-ratio:16/9;
+  border-radius:12px;
+  border:none;
+  display:none;
+}
+#videoThumbnail{
+  width:100%;
+  aspect-ratio:16/9;
+  border-radius:12px;
+  margin-bottom:10px;
+}
+#localVideo{
+  width:100%;
+  aspect-ratio:16/9;
+  border-radius:12px;
+  display:none;
+}
+
+/* ===== HORIZONTAL SCROLL BUTTON BOX ===== */
+.buttonBox{
+  display:flex;
+  overflow-x:auto;
+  gap:10px;
+  margin-top:50px;
+  padding:8px;
+  border-radius:8px;
+  background:#000;
+  scrollbar-width:none;
+}
+.buttonBox::-webkit-scrollbar{display:none;}
+.buttonBox button{
+  flex:0 0 auto;
+  padding:10px 25px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#2f3136;
+  color:#fff;
+  font-weight:bold;
+}
+.buttonBox button.active{
+  background:#00aa00;
+}
+
+.backBtn{
+  position:fixed;
+  top:10px;
+  left:10px;
+  padding:8px 14px;
+  background:#00aa00;
+  border:none;
+  border-radius:8px;
+  color:#fff;
+}
+.telegramBox{
+  margin-top:15px;
+}
+.telegramBox a{
+position:fixed;
+  top:450px;
+  left:15px;
+  display:block;
+  padding:14px;
+  background:#229ED9;
+  color:#fff;
+  border-radius:10px;
+  font-weight:bold;
+  text-align:center;
+  text-decoration:none;
+}
+/* ===== CATEGORY BAR ===== */
+.categoryBar{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  margin:10px 0 15px;
+  scrollbar-width:none;
+}
+.categoryBar::-webkit-scrollbar{display:none;}
+
+.catBtn{
+  flex:0 0 auto;
+  padding:8px 16px;
+  border:none;
+  border-radius:10px;
+  background:#2f3136;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+.catBtn.active{
+  background:#00aa00;
+}
+.videoCaption{
+  margin-top:12px;
+  padding:10px;
+  background:#000;
+  border-radius:8px;
+  font-size:15px;
+  text-align:left;
+  color:#fff;
+}
+.videoCaption .ep{
+  margin-top:6px;
+  font-size:14px;
+  color:#00ff00;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div id="page1" class="page">
+  <div id="autoSlider">
+    <div id="autoTrack"></div>
+    <div id="dots"></div>
+  </div>
+  <div class="searchWrapper">
+    <input type="text" id="searchBox" placeholder="🔎your favorite drama movie Search ">
+  </div>
+<!-- CATEGORY BAR -->
+<div class="categoryBar">
+  <button class="catBtn active" onclick="filterCategory('all', this)">For You</button>
+  <button class="catBtn" onclick="filterCategory('bengali', this)">Bengali</button>
+  <button class="catBtn" onclick="filterCategory('movie', this)">Movie</button>
+  <button class="catBtn" onclick="filterCategory('natok', this)">Natok</button>
+</div>
+  <h2>Main Gallery</h2>
+  <div id="gallery"></div>
+</div>
+
+<!-- PAGE 2 -->
+<div id="page2" class="page">
+  <button class="backBtn" onclick="backToMain()">⬅ Back</button>
+  <h2>Video Player</h2>
+  <div id="videoContainer">
+    <img id="videoThumbnail" src="">
+    <iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    <video id="localVideo" controls playsinline></video>
+    <div id="videoCaption" class="videoCaption"></div>
+    <div class="buttonBox" id="buttonBox"></div>
+<div class="telegramBox">
+  <a href="https://t.me/dramastore30" target="_blank">
+    📢 Join  Telegram Channel
+  </a>
+</div>
+  </div>
+</div>
+
+<script>
+/* ===== DATA ===== */
+const sliderVideos = [
+  {thumb:'how to download video.gif', video:'how to download video'},
+  {thumb:'ss drama store.gif', link:'https://t.me/dramastore30'},
+  {thumb:'https://i.postimg.cc/c1zbMDNf/06.jpg', video:'video06'}, // 👈 এটা
+  {thumb:'https://i.postimg.cc/FRLDPvvy/11.jpg', video:'Iam Not A Robot Bengali Dubbed '}
+];
+
+const mainVideos=[
+ {id:'thumb06',video:'video06',thumb:'https://i.postimg.cc/c1zbMDNf/06.jpg',badge:'Bengali Drama',caption:'Cute Programmer ',charge:false},
+ {id:'thumb16',video:'The Tale Of Nine Tailed Bengali Dubbed',thumb:'https://i.postimg.cc/hjW9tdF7/16.jpg',badge:'Bengali Drama',caption:' পুনজীবন The Tale Of Nine Tailed ',charge:false},
+ {id:'thumb01',video:'video01',thumb:'https://i.postimg.cc/jdXJY1S0/01.jpg',badge:'Bengali Drama ',caption:'Action packed movie',charge:true},
+ {id:'thumb02',video:'video02',thumb:'https://i.postimg.cc/KjYhk4Bc/02.jpg',badge:'Bengali Drama ',caption:'Bengali drama series',charge:false},
+ {id:'thumb03',video:'video03',thumb:'https://i.postimg.cc/8P9gcp5P/03.jpg',badge:'Bengali Drama ',caption:'Bengali drama series',charge:false},
+ {id:'thumb04',video:'video04',thumb:'https://i.postimg.cc/d1qzpDWC/04.jpg',badge:'Bengali Drama ',caption:'Bengali drama series',charge:false},
+ {id:'thumb05',video:'video05',thumb:'https://i.postimg.cc/2ytM1GC9/05.jpg',badge:'Bengali Drama ',caption:'Bengali drama series',charge:false},
+ {id:'thumb07',video:'video07',thumb:'https://i.postimg.cc/0QQV7SXy/07.jpg',badge:'Bengali Drama ',caption:'I love you bow ',charge:false},
+ {id:'thumb08',video:'video08',thumb:'https://i.postimg.cc/SKQBtJtF/08.jpg',badge:'Bengali Movie ',caption:'Avatar Fire and Ash 2025 Bengali ',charge:false},
+ {id:'thumb09',video:'video09',thumb:'https://i.postimg.cc/JhhF5StK/09.jpg',badge:'Bengali Movie ',caption:'Avatar Fire and Ash 2025 Bengali ',charge:false},
+ {id:'thumb10',video:'video10',thumb:'https://i.postimg.cc/tR6Mk3CT/10.jpg',badge:'Bengali Movie ',caption:'Jio Pagla 2026 Bengali Movie',charge:false},
+ {id:'thumb11',video:'Iam Not A Robot Bengali Dubbed ',thumb:'https://i.postimg.cc/FRLDPvvy/11.jpg',badge:'Bengali Drama ',caption:'I am not a robot',charge:false},
+ {id:'thumb12',video:'video12',thumb:'https://i.postimg.cc/VLR4ZDym/12.jpg',badge:'Bengali Drama ',caption:'Adorer Boyfriend - Kimi Wa',charge:false},
+ {id:'thumb13',video:'Mersal 2026 Bengali Dubbed Movie',thumb:'https://i.postimg.cc/5tZmQrzQ/13.jpg',badge:'Bengali movie ',caption:'Mersal 2026 Bengali',charge:false},
+ {id:'thumb14',video:'Amra Honeymoon E Jabo 2025',thumb:'https://i.postimg.cc/T2jchC3r/14.jpg',badge:'Bengali natok',caption:' Amra Honeymoon E Jabo ',charge:false},
+ {id:'thumb15',video:'Chor Baba Bengali Drama Eagleott ',thumb:'https://i.postimg.cc/KYLMw8KQ/15.jpg',badge:'Bengali natok',caption:' Chor Baba ',charge:false},
+];
+
+/* ===== PARTS ===== */
+const parts = {
+  'video01': [{title:'EP FULL ', driveId:'13NDevI0JqmFRhynevRQF-jgqq-8LJL6-'}],
+  'video02': [{title:'full EPISODE', driveId:'1l3JugHqFYGEIAK0n_DG0RCjSSyqJA3qk'}],
+  'video03': [{title:'full EPISODE', driveId:'19SMUcLnRYMOWiwaCjUfSrbGfJ8qCc_wv'}],
+  'video04': [{title:'full EPISODE', driveId:'1__sNpCD2tGJDUAhAQNJgo8XnoVurcUMk'}],
+  'video05': [
+    {title:'EP01', driveId:'1MmnTyMypb6OW2DOyAOCRvUG0lC_jp03g'},
+    {title:'EP02', driveId:'1af80VfzaHy2bu6J0BCmPL2FqDA6c6VDp'},
+    {title:'EP03', driveId:'14iGk78sxu3CI8GPZxviXel9E8MPUjNmc'},
+    {title:'EP04', driveId:'1CIOMxWuJx-i0xWP3h3Eec3aTpwrxJ8TZ'}
+
+  ],
+  'video06': [
+    {title:'EP01', driveId:'16sogo_ZHRifsVju_z8wYqHKhcHEPuQLY'},
+    {title:'EP02', driveId:'1bPrClasADtMOsm8EOVAxNdKVoo_nZGrY'},
+    {title:'EP03', driveId:'15unSJBUswfMy2Kz6kv4io9X9cUUu6Y88'},
+    {title:'EP04', driveId:'1-OkorHaepd-ac1AM4tr8qgc2cpWdJe1c'},
+    {title:'EP05', driveId:'1hHwlSJSH-t4DSPtOCXj_xbIP7uNuzaQs'},
+    {title:'EP06', driveId:'1BjGN43wtW2WG0Z1kZnFX1lYZg8ktee1t'},
+    {title:'EP07', driveId:'1VBleC7joPqVtkbYOsrvDUmQrSMXuHm4L'},
+    {title:'EP08', driveId:'1la5kR0VOa68ldT_H66dJeS6LfKjVcZI5'},
+    {title:'EP09', driveId:'1wAeepDGJVve-q5HAzItuUAiUM1zKPIzf'},
+    {title:'EP10', driveId:'1COZ6Bfd6j6DSw7k424LWYm77d8pxzpTe'},
+    {title:'EP11', driveId:'1hcXOhukbjzX687_c8FA3tipnJg2JqGxM'},
+    {title:'EP12', driveId:'1cihUIjJO8_amlqZa-2v1kSgJdfsxODaZ'},
+    {title:'EP13', driveId:'1u5WYRQ_fnVhFbmlkWIGkhgX4rkR1FbHo'},
+    {title:'EP14', driveId:'1tudyeIIENpJr3PywaYcEPVgtzxQhX6CL'},
+    {title:'EP15', driveId:'1THA_U97xmCFTORHPwFx5uMKmpfc6uFJ2'},
+    {title:'EP16', driveId:'1TBHiLTRLI4i5v-C2DoLpF4qIsF1NygNS'},
+    {title:'EP17', driveId:'1ZbU0NtTUNoN4AqmCdp2K-Gu72UFQKCVC'},
+    {title:'EP18', driveId:'1UwASf0So_G3QgJm_nZxnmq4JQPdYf93p'},
+    {title:'EP19', driveId:'1JD84-DuIGi6-1c3ie9e97BCFfaLtMp_H'},
+    {title:'EP20', driveId:'1GlRv8dksYA7U_EgKpvoG_D8fhprhD4Ri'},
+    {title:'EP21', driveId:'1ztiQjDgSDxdqkoF1FrEESqIQwwEABlJx'},
+    {title:'EP22', driveId:'131VEnJ_dJVtq2NeOndInKtP69pnrRrCJ'},
+    {title:'EP23', driveId:'1vMhrrb1GtsDLQYSb-SmDuyEgeoGKk0o6'},
+    {title:'EP24', driveId:'1KnB3iLMZ_6qgeVtyciqaHdUgS1cPSVfY'},
+    {title:'EP25', driveId:'1hDZHJJL4zzoJDYkwi0bfR7qrnC44IUDo'},
+    {title:'EP26', driveId:'13qxNTU2KcRekTfS9MYeAJjHSlFJSaGks'},
+    {title:'EP27', driveId:'1z5YWV_chbvf2-xqwQosYrfFte-1YN2u1'},
+    {title:'EP28', driveId:'15DvX7l7qKZnuC-blUCsuCIeiQxBxpZt6'},
+    {title:'EP29', driveId:'1UyYrCTeF_HSDGkFNFduUVRacYV4jibjH'},
+    {title:'EP30', driveId:'1_o1jtTYDiJtnr1yqjtFctbGwfm5ZSEbp'}
+  ],
+  'video07': [
+    {title:'EP01', file:'video1.mp4'},
+    {title:'EP02', file:'video2.mp4'},
+    {title:'EP03', file:'video3.mp4'},
+    {title:'EP04', file:'video4.mp4'}
+  ],
+  'video08': [
+    {title:' full Movie  ', driveId:'1mQvZl-N1lXo2orBa6YGpmIvIDpshrw8F'}
+  ],
+  'how to download video': [
+    {title:'click to on video', file:'how to download video'}
+ ],
+  'video09': [
+    {title:' EP-01-04 ', driveId:'1NNTIyEUr2xIVHNfUlftXywj56gxGXTrf'},
+    {title:' EP-05-08 ', driveId:'1mkQSDQ_jmmbcWx4j59IsCVXZSzorW2nE'},
+    {title:' EP-09-12 ', driveId:'1SSnIup7IpYauME4ryfzwT5pOwQ2dgv3j'},
+    {title:' EP-13-16 ', driveId:'1fkKnA3l8WI68gwizMLBnyE9EBECfoeTJ'},
+    {title:' EP-17-20 ', driveId:'1YlegU9XVJwNcI4_BpUNQjnWWi53yeQJD'},
+    {title:' EP-21-24 ', driveId:'1gXCSM3hHkEq8YRhpicRvg6pwNz1VbSVj'},
+    {title:' EP-25-28 ', driveId:'1zfvkSMwgtGB2mIYyPjdF7nAAsGXqiRz2'},
+    {title:' EP-29-32 ', driveId:'1b5OsrsL7fSgdhMAJnh5aikvk9EKYzvaG'},
+    {title:' EP-33-36 ', driveId:'1pn_OGWK1vnB-swnG2nLJ_MLVc3p1Qbnu'},
+    {title:' EP-37-40 ', driveId:'1o79Ru9rrksvii1sS-SMKGyHRuFlFhmak'},
+    {title:' EP-41-43 ', driveId:'1TNBwrj-OB4K_q_BNVwdwKVbOlwkzJnLv'},
+    {title:' EP-44-46 ', driveId:'19HH57C9OeiPFY8NeeHfH9nWc_S6kVTYQ'},
+    {title:' EP-47-51 ', driveId:'1IbaBrRfmRRvojZMhZGczdPwvFYN8MVJK'},
+    {title:' EP-52-53 ', driveId:'1nlfgADGsOrgDYcyyogh6916ggQQUNEx0'}
+ ],
+  'video10': [
+    {title:' full Movie ', driveId:'1vOCkTvRCO43zPmVKsraDWKtb_as3IAq7'}
+ ],
+  'Iam Not A Robot Bengali Dubbed ': [
+    {title:' EP-01 ', driveId:'1g8J-dgDZbazhSKkC3YPa7Z4lBnFsj4D3'},
+    {title:' EP-02 ', driveId:'1V_jqosuhZMoO0trxxUPZ8_DNBLTIq8Gq'},
+    {title:' EP-03 ', driveId:'1ojz26-cYyF8FO0toqg9EjYqlvnQyNPCJ'},
+    {title:' EP-04 ', driveId:'1SCZVovGT9UYUdnYqVqEzY17tisqc8tZj'},
+    {title:' EP-5-8 ', driveId:'1bwSD5zwlu5fli6ATs-jAJ8uHOaI2zX2J'},
+    {title:' EP-9-12 ', driveId:'1hhV5jAldXs3Rnq1vFgc-XDqQUUmJF413'},
+    {title:' EP-13-16 ', driveId:'1RGZ-q2wyl-ZqKmu82uCb6gmrMO3A_nt1'},
+    {title:' EP-17-20 ', driveId:'1IfI9XUlKeGR-E2rm9B56FiIeY70w3qJP'},
+    {title:' EP-21 ', driveId:'1UUOmXM9_IAq937LF_CsawWBjmXjNX-Vk'},
+    {title:' EP-22 ', driveId:'1sCBBUE4Q9CRPPDpMKLoiWOesQIaeDQEn'},
+    {title:' EP-23 ', driveId:'130zX3Q7NjDj61_VDBE-khNOnb0t7KI2K'},
+    {title:' EP-24 ', driveId:'1uZc3SfBKXvyXnZe7MkzYkGIa9kC0Ehk4'},
+    {title:' EP-25 ', driveId:'1wuWJwiOqjyD15JDegc8aNOzH5_9xkAi6'},
+    {title:' EP-26 ', driveId:'1YjDjXQ4uLBMB_gCex_172cFNzOVoCcmx'},
+    {title:' EP-27 ', driveId:'1EEPJz9Q7BelIvNkvuLfEQUpO3hsvxW9s'},
+    {title:' EP-28 ', driveId:'1yo_u9EKLd4oQY0gNxvrWyR-baLRYY2-E'},
+    {title:' EP-29-32 ', driveId:'1Z9GEtuBs6EHgLwU_Q6Dy775_wm5GYGPB'}
+ ],
+  'video12': [
+    {title:'EP01-7', driveId:'19urd6paUjhNexi8gyFp9C5Sw8iWvweoj'},
+    {title:'EP08', driveId:'1LmvKiDVZ6qlt8AA7QhT0Nuaq4v9tf340'},
+    {title:'EP09', driveId:'1rygrob2jBN5itvzhH3cnA1Xkn2NU9F2V'},
+    {title:'EP10', driveId:'15ERVyKFJVipqIzGBr9qJoiRQHZnTiLNl'},
+    {title:'EP11-20', driveId:'1ZpbYFxrMpYKCj-MikUIvrqf950p2VuDl'}
+  ],
+  'Mersal 2026 Bengali Dubbed Movie': [
+    {title:' full Movie ', driveId:'1JEmGN-GAepjXQL2JdYc59wQMI6dWDvXt'}
+ ],
+  'Amra Honeymoon E Jabo 2025': [
+    {title:' full natok ', driveId:'1rycXHpisXMACX_Fr1u4RtUjUsA6xOFpp'}
+ ],
+  'Chor Baba Bengali Drama Eagleott ': [
+    {title:' full natok ', driveId:'1IhJkKzVHKI37qZHDDd5JIDoEfCQX2qKX'}
+ ],
+ 'The Tale Of Nine Tailed Bengali Dubbed': [
+    {title:'EP01', driveId:'1i0jxw5kkWnV3Yvfk-9klIbkskS_YBELx'},
+    {title:'EP02', driveId:'1kwdqhenF-MVOBelxghIE0YEF0tMUGYfw'},
+    {title:'EP03', driveId:'1v-7cjIci5xiTPsBbJdb-Nurp8CmsCgZg'},
+    {title:'EP04', driveId:'1zA18mFypLBlw0u0gmbGZkfhF7KjoNty-'},
+    {title:'EP05', driveId:'1shfwdNNJMA9vrgT_xqKN1ZgvRp0pju9-'},
+    {title:'EP06', driveId:'1mpWLzdieSu77-9HSgEYC8VtU4D0JmbMI'},
+    {title:'EP07', driveId:'10GDdVG9wZ0x0N1IGkd-oL_VNzLujaydM'},
+    {title:'EP08', driveId:'1OdVyPdBVZbIPOv4qSBdmuVR0v-7EiD3h'},
+    {title:'EP09', driveId:'1anQO9DhBX_ZoGUcUmz7OXJwIWszuvSAD'},
+    {title:'EP10', driveId:'1Yig90kjY7XK-NOyIYeeiiMfRS3sj5tLP'},
+    {title:'EP11', driveId:'13Ep2jYQYCKBiLEEYmvnnqIE8Z-Wkn_2R'},
+    {title:'EP12', driveId:'11g6NitQbPrP5el-z1V_Jgd2JkxG_XAaK'},
+    {title:'EP13', driveId:'1M3G1-JqOn2_TJxJWtCy6wPqzmVLhQkrk'},
+    {title:'EP14', driveId:'1PfeVpFU41RGTUb5CO_4KBk2W6c67Qsjz'},
+    {title:'EP15', driveId:'1jMEuYJzWGtu9nPoTqatcTNNoGd9Tq5HD'},
+    {title:'EP16', driveId:'1hkgZErV3hDBsuBsUbqwC5tTdN-vh49M0'},
+    {title:'EP17', driveId:'1knQ93xznGJZg_0y5x3USXLiZ8at5t4_L'},
+    {title:'EP18', driveId:'1H__TaFy1X737p-yrquho4ArgOzI1vyjM'},
+    {title:'EP19', driveId:'1ukc0Upp1MOjaKjY0rK1MZgU8XWnn9CET'},
+    {title:'EP20', driveId:'11Y5AC1F5fdqYmdENWYXZ8lecVX--iQjc'},
+    {title:'EP21', driveId:'1AwqwhTnPM_NmLF_PiVHO-7Ycc7j35TgQ'},
+    {title:'EP22', driveId:'1t6H2FCD-_JkFAib2kixH36Ajvb9gVyLc'},
+    {title:'EP23', driveId:'1T6l_rAzIi9wSYdf3hFLvZDsxVVSk-QW9'},
+    {title:'EP24', driveId:'1BR0ydVfVoQpWiRtAex90dPNvY_eRSUXq'},
+    {title:'EP25', driveId:'1fWrhFlHaNBJ0a53LkWW-rfjjTf9Deo3p'},
+    {title:'EP26', driveId:'1JsfLrdtpmIfBuXV1uZWhLSawKbXF3de2'},
+    {title:'EP27', driveId:'1tcmg8HR6ooKc54THvkxUME3JAwEnPR3Z'},
+    {title:'EP28', driveId:'1wlgkDMb3-3cXoJCg-v6RNXGttWUfhSYm'},
+    {title:'EP29', driveId:'1ettq0nHpTCucpwJ7rCbhxstfDYvzhY34'}
+  ]
+};
+
+let slideIndex=0;
+let currentVideo=null;
+let currentPartIndex=0;
+
+/* ===== PAGE SWITCH ===== */
+function openPage(n){
+ document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+ document.getElementById('page'+n).style.display='block';
+}
+
+/* ===== BUILD MAIN GALLERY ===== */
+const gallery=document.getElementById('gallery');
+function buildGallery(arr){
+  gallery.innerHTML='';
+  arr.forEach(v=>{
+    const card=document.createElement('div');
+    card.className='thumbBox';
+    if(v.charge) card.classList.add('large');
+    card.onclick=()=>openVideoPage(v.video,v.thumb);
+    
+    const thumbImg=document.createElement('img');
+    thumbImg.src=v.thumb;
+    card.appendChild(thumbImg);
+    
+    const badge=document.createElement('div');
+    badge.className='badge';
+    badge.innerText=v.badge;
+    card.appendChild(badge);
+    
+    const caption=document.createElement('div');
+    caption.className='caption';
+    caption.innerText=v.caption;
+    card.appendChild(caption);
+    
+    gallery.appendChild(card);
+  });
+}
+buildGallery(mainVideos);
+
+/* ===== SEARCH ===== */
+document.getElementById('searchBox').addEventListener('input', function(){
+  const val = this.value.toLowerCase();
+  const filtered = mainVideos.filter(v=>
+    (v.badge && v.badge.toLowerCase().includes(val)) ||
+    (v.caption && v.caption.toLowerCase().includes(val))
+  );
+  buildGallery(filtered);
+});
+
+/* ===== BUILD SLIDER ===== */
+const track = document.getElementById('autoTrack');
+const dotsBox = document.getElementById('dots');
+
+sliderVideos.forEach((v,i)=>{
+  const img = document.createElement('img');
+  img.src = v.thumb;
+  img.className = 'autoThumb';
+
+  // 👇 ঠিক করা ক্লিক হ্যান্ডলার
+  img.onclick = () => {
+    if(v.link){ 
+      window.open(v.link, '_blank'); // যদি link থাকে, নতুন ট্যাবে খোলে
+    } else {
+      openVideoPage(v.video, v.thumb); // না হলে ভিডিও প্লে করে
+    }
+  };
+
+  track.appendChild(img);
+  
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dotsBox.appendChild(dot);
+});
+
+function showSlide(){
+  track.style.transform=`translateX(-${slideIndex*100}%)`;
+  document.querySelectorAll('.dot').forEach((d,i)=>{
+    d.classList.toggle('active',i===slideIndex);
+  });
+  slideIndex=(slideIndex+1)%sliderVideos.length;
+}
+setInterval(showSlide,3000);
+showSlide();
+
+/* ===== OPEN VIDEO PAGE ===== */
+function openVideoPage(videoKey,thumb){
+  currentVideo = videoKey;
+
+  let savedIndex = sessionStorage.getItem(videoKey);
+  currentPartIndex = savedIndex ? parseInt(savedIndex) : 0;
+  
+  const videoThumb = document.getElementById('videoThumbnail');
+  const iframe = document.getElementById('videoFrame');
+  const localVideo = document.getElementById('localVideo');
+
+  videoThumb.src = thumb;
+  videoThumb.style.display='block';
+  iframe.style.display='none';
+  iframe.src='';
+  localVideo.style.display='none';
+  localVideo.pause();
+  localVideo.src='';
+
+  const buttonBox = document.getElementById('buttonBox');
+  buttonBox.innerHTML='';
+
+  parts[videoKey].forEach((p,i)=>{
+    const btn=document.createElement('button');
+    btn.innerText=p.title;
+    btn.onclick = ()=>{
+      currentPartIndex=i;
+      sessionStorage.setItem(videoKey,i);
+      playVideo(p,btn);
+    };
+    buttonBox.appendChild(btn);
+  });
+
+  // Highlight saved or first button
+// playVideo(parts[videoKey][currentPartIndex], buttonBox.children[currentPartIndex]);
+  
+  openPage(2);
+}
+
+/* ===== PLAY VIDEO ===== */
+function playVideo(part,button){
+  const iframe = document.getElementById('videoFrame');
+  const videoThumb = document.getElementById('videoThumbnail');
+  const localVideo = document.getElementById('localVideo');
+// 👇 CAPTION + EP SHOW
+  const captionBox = document.getElementById('videoCaption');
+  captionBox.innerHTML = `
+    <div>${currentVideo}</div>
+    <div class="ep">${part.title}</div>
+  `;
+  videoThumb.style.display='none';
+  iframe.style.display='none';
+  iframe.src='';
+  localVideo.style.display='none';
+  localVideo.pause();
+  localVideo.src='';
+
+  if(part.driveId && part.driveId!==''){ // Drive video
+    iframe.style.display='block';
+    iframe.src=`https://drive.google.com/file/d/${part.driveId}/preview`;
+  } else if(part.file){ // Local mp4 video
+    localVideo.style.display='block';
+    localVideo.src=part.file;
+    localVideo.play();
+  }
+
+  document.querySelectorAll('.buttonBox button').forEach(b=>b.classList.remove('active'));
+  if(button) button.classList.add('active');
+}
+function filterCategory(type, btn){
+  document.querySelectorAll('.catBtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if(type === 'all'){
+    buildGallery(mainVideos);
+    return;
+  }
+
+  const filtered = mainVideos.filter(v =>
+    v.badge && v.badge.toLowerCase().includes(type)
+  );
+
+  buildGallery(filtered);
+}
+/* ===== BACK TO MAIN ===== */
+function backToMain(){
+  const iframe = document.getElementById('videoFrame');
+  const localVideo = document.getElementById('localVideo');
+  iframe.src='';
+  localVideo.pause();
+  localVideo.src='';
+  document.getElementById('videoThumbnail').style.display='block';
+  openPage(1);
+}
+</script>
+
+</body>
+</html>
